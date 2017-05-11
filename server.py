@@ -5,8 +5,8 @@ Grayson Sinclair
 
 A server for hosting python games that AI can compete over.
 
-TODO: create a lobby so that users can connect, pick a game, then wait to be
-    matched up with another player
+TODO: Add a "routing" list of games so that users can modularly add games into
+        the framework.
 
 TODO: require user:pass login
     TODO: make connection use TLS
@@ -17,51 +17,32 @@ TODO: Add some games
     TODO: three-dimensional tic-tac-toe
 """
 
-from socket import socket, AF_INET, SOCK_STREAM
-from threading import Thread, Lock, Barrier
 from time import sleep
+from threading import Thread, Lock
 
 from games import *
 from settings import *
+from networking import *
 
-
-def create_listener(addr, port, listener_count):
-    s = socket(AF_INET, SOCK_STREAM)
-    s.bind((addr, port))
-    s.listen(listener_count)
-    return s
-
-def send(conn, data, no_newline=False):
-    data = bytes(data, ENCODING)
-    if not no_newline:
-        data += b'\n'
-    conn.send(data)
-
-def recv(conn):
-    return conn.recv(1024).decode(ENCODING).strip()
-
-def interact(conn, mesg):
-    send(conn, mesg, no_newline=True)
-    return recv(conn)
 
 def play_game(*players):
     game = ChatRoom()
     while not game.over():
         state = game.gamestate()
         for player in players:
-            send(player, state)
-        send(players[1], "Waiting for other player to move...")
-        response = interact(players[0], "Your move? ")
+            player.send(state)
+        players[1].send("Waiting for other player to move...")
+        response = players[0].interact("Your move? ")
         while not game.try_move(response):
-            send(players[0], game.gamestate())
-            send(players[0], "Invalid move! Please try again.")
-            response = interact(players[0], "Move? ")
+            players[0].send(game.gamestate())
+            players[0].send("Invalid move! Please try again.")
+            response = players[0].interact("Move? ")
         players = players[::-1]
     state = game.gamestate()
     for player in players:
-        send(player, state)
-        send(player, "Game Over")
-        player.close()# TODO: allow the handler to close these connections
+        player.send(state)
+        player.send("Game Over")
+        player.wait() # tell the connection handler we're done with this socket
 
 def handle_user_connection(conn):
     is_connected = True
@@ -69,14 +50,14 @@ def handle_user_connection(conn):
     while is_connected:
         send(conn, "Pick an option:\n1: Chat Room\n2: Quit")
         response = recv(conn)
+        # TODO: build out all the cases for games (can this be done automatically?)
         if response == "1":
             print("Player queued up for the chat room.")
             send(conn, "Entering chat room...")
+            player = Player(conn)
             with waitlist_lock:
-                waitlist.append(conn)
-            # TODO: wait for the chat room to say you've exited
-            # for now we'll just exit and close the connection in the chat room
-            return
+                waitlist.append(player)
+            player.wait()
         elif response == "2":
             is_connected = False
             send(conn, "Goodbye.")

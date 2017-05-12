@@ -9,9 +9,6 @@
 #   gamestate - returns the game board as a string to be printed
 #   try_move - attempts a move. Changes the game state if valid. Returns whether
 #       the move was valid.
-# TODO: Add a method for player prompts that is customizable, comes from base class
-# TODO: Make the lexical information part of the game state, rather than fixed
-#       strings that are sent by the server.
 #
 
 
@@ -44,7 +41,20 @@ class Player():
     def interact(self, data):
         return interact(self._s, data)
 
-class ChatRoom():
+class GameBase():
+    """The base class for any game that runs on this server."""
+    prompt = "Your move? "
+
+    def help(self):
+        """Returns a helpful message on how to play the game."""
+        return "The user has not created a help menu for this game."
+
+    def error_message(self):
+        """Returns a string explaining why the last move failed.
+        If the last move did not fail, behavior is undefined."""
+        return "Invalid move! Please try again."
+
+class ChatRoom(GameBase):
     """A simple example of how to program a game class.
     Again, just an example for game programming. It's actually a pretty bad
     chat room."""

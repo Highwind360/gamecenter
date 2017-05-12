@@ -5,9 +5,6 @@ Grayson Sinclair
 
 A server for hosting python games that AI can compete over.
 
-TODO: Add a "routing" list of games so that users can modularly add games into
-        the framework.
-
 TODO: require user:pass login
     TODO: make connection use TLS
     TODO: track user's scores at the various games
@@ -15,18 +12,21 @@ TODO: require user:pass login
 
 TODO: Add some games
     TODO: three-dimensional tic-tac-toe
+    TODO: add support for games that require more than two players
+        TODO: add queue support for making a single player control multiple
+                'players' in a game where the queue isn't full enough
 """
 
 from time import sleep
+from itertools import count
 from threading import Thread, Lock
 
-from games import *
+import games
 from settings import *
 from networking import *
 
 
-def play_game(*players):
-    game = ChatRoom()
+def play_game(game, *players):
     while not game.over():
         state = game.gamestate()
         for player in players:
@@ -48,30 +48,33 @@ def handle_user_connection(conn):
     is_connected = True
     print("A user has connected.")
     while is_connected:
-        send(conn, "Pick an option:\n1: Chat Room\n2: Quit")
+        send(conn, greeting_string)
         response = recv(conn)
-        # TODO: build out all the cases for games (can this be done automatically?)
-        if response == "1":
-            print("Player queued up for the chat room.")
-            send(conn, "Entering chat room...")
-            player = Player(conn)
-            with waitlist_lock:
-                waitlist.append(player)
-            player.wait()
-        elif response == "2":
+        if response == "0":
             is_connected = False
             send(conn, "Goodbye.")
             conn.close()
             print("A user has disconnected.")
+        elif response in GAMES.keys():
+            print("Player queued up for " + GAMES[response]["name"] + "!")
+            send(conn, "Entering chat room...")
+            player = games.Player(conn)
+            with waitlist_lock:
+                waitlist[response].append(player)
+            player.wait()
         else:
             send(conn, "I did not understand your choice. Please try again.")
 
 def pair_off_queued_users():
     while running:
         with waitlist_lock:
-            if len(waitlist) > 1:
-                user1, user2 = waitlist.pop(0), waitlist.pop(0)
-                create_thread(play_game, user1, user2)
+            for identifier in waitlist.keys():
+                wl = waitlist[identifier]
+                if len(wl) > 1:
+                    # fetches the game class named in the "class" game settings
+                    new_game = games.__getattribute__(GAMES[identifier]["class"])()
+                    user1, user2 = wl.pop(0), wl.pop(0)
+                    create_thread(play_game, new_game, user1, user2)
         sleep(1)
 
 def create_thread(thread_target, *args):
@@ -99,8 +102,14 @@ if __name__ == "__main__":
     # initialize global variables
     running = True
     threads = []
-    waitlist = [] # An array of clients waiting to be paired off
-                  # TODO: make a dict of games with arrays for each game chosen
+    waitlist, gamelist = {}, {}
+    greeting_string = "Welcome to the GameCenter! Please pick a queue.\n"
+    for identifier in GAMES:
+        waitlist[identifier] = []
+        game = GAMES[identifier]
+        greeting_string += identifier + ". " + game["name"] + "\n"
+        gamelist[identifier] = games.__getattribute__(game["class"])
+    greeting_string += "\n0. Quit"
     waitlist_lock = Lock()
 
     main()

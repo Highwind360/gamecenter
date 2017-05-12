@@ -2,6 +2,14 @@
 # This is where your configuration variables go.
 #
 
+# The most important option! List of games to make available to users.
+GAMES = {
+    "1": {
+        "name": "Chat Room",
+        "class": "ChatRoom"
+    }
+}
+
 # The address/hostname and port to listen on, and the number of handlers for a
 # connection.
 NETWORK = {

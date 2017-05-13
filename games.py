@@ -15,6 +15,7 @@
 from threading import Barrier
 
 from networking import *
+from structures import DisjointSet
 # TODO: you may be able to refactor most networking into the player class
 
 
@@ -75,3 +76,95 @@ class ChatRoom(GameBase):
             return False
         self.history += move + "\n"
         return True
+
+class TicTacToe(GameBase):
+    """The game of tic-tac-toe, with adjustable size."""
+    def __init__(self, edgelength=3):
+        self.edgelen = edgelength
+        total_spaces = self.edgelen**2
+        self.state = [' '] * total_spaces
+        self.boundary = '#'
+        self.players = ['X', 'O']
+        self.current_player = 0
+        self.possible_moves = range(total_spaces)
+
+        # a list of all possible horizontal, vertical, and diagonal win conditions
+        self.vertical, self.horizontal, self.diagonal = {}, {}, {}
+        for i in range(self.edgelen):
+            self.vertical[i] = DisjointSet(list(range(self.edgelen)))
+            self.horizontal[i] = DisjointSet(list(range(self.edgelen)))
+        for i in ["downwards", "upwards"]:
+            self.diagonal[i] = DisjointSet(list(range(self.edgelen)))
+
+    def over(self):
+        in_a_line = False
+        for element in list(self.vertical.values()) + \
+                list(self.horizontal.values()) + list(self.diagonal.values()):
+            # if there's only one group, then it's a straight
+            # line from one edge to the other: a win condition
+            if element.size == 1:
+                in_a_line = True
+                break
+        no_spaces_left = True
+        for space in self.state:
+            if space == ' ':
+                no_spaces_left = False
+                break
+        return in_a_line or no_spaces_left
+
+    def try_move(self, move):
+        """Accepts the move as an integer between 1 and 9.
+        The integer represents the space to put your mark,
+        numbered from left to right, top to bottom."""
+        move = int(move) - 1
+        success = False
+        # can't make moves outside the range, or in an occupied space
+        if move in self.possible_moves and self.state[move] == ' ':
+            cur_p = self.players[self.current_player]
+            self.state[move] = cur_p
+            self.current_player = (self.current_player + 1) % 2
+            self.find_connections(move, cur_p)
+            success = True
+        return success
+
+    def find_connections(self, move, cur_p):
+        """Looks for moves on the board that are connected."""
+        # coordinates of move
+        x, y = move % 3, move // 3
+
+        vertical = self.vertical[x]
+        horizontal = self.horizontal[y]
+
+        # TODO: can these checks be factored into a new helper for a 2D grid
+        #       of disjoint sets? Could be useful for games where the win
+        #       condition is "x in a row".
+        # Check if we have an adjacent piece, and register them as a group
+        if move - 3 in self.possible_moves and self.state[move - 3] == cur_p:
+            vertical.union_find(y, y - 1)
+        if move + 3 in self.possible_moves and self.state[move + 3] == cur_p:
+            vertical.union_find(y, y + 1)
+        if x - 1 > 0 and self.state[move - 1] == cur_p:
+            horizontal.union_find(x, x - 1)
+        if x + 1 < self.edgelen and self.state[move + 1] == cur_p:
+            horizontal.union_find(x, x + 1)
+
+        if x == y: # diagonal downards
+            if move - 4 in self.possible_moves and self.state[move - 4] == cur_p:
+                self.diagonal["downwards"].union_find(y, y - 1)
+            if move + 4 in self.possible_moves and self.state[move + 4] == cur_p:
+                self.diagonal["downwards"].union_find(y, y + 1)
+        if x == self.edgelen - (y + 1): # self.diagonal upwards
+            if move - 2 in self.possible_moves and self.state[move - 2] == cur_p:
+                self.diagonal["upwards"].union_find(y, y - 1)
+            if move + 2 in self.possible_moves and self.state[move + 2] == cur_p:
+                self.diagonal["upwards"].union_find(y, y + 1)
+
+    def gamestate(self):
+        width = self.edgelen * 2 + 1
+        board = self.boundary * width + "\n"
+        for i in range(3):
+            row = self.state[i*3:(i+1)*3]
+            board += self.boundary + self.boundary.join(row) + self.boundary
+            board += "\n" + self.boundary * width + "\n"
+        return board
+

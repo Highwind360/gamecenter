@@ -7,6 +7,10 @@ GAMES = {
     "1": {
         "name": "Chat Room",
         "class": "ChatRoom"
+    },
+    "2": {
+        "name": "Tic Tac Toe (Naughts and Crosses)",
+        "class": "TicTacToe"
     }
 }
 

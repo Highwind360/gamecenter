@@ -7,6 +7,7 @@ A server for hosting python games that AI can compete over.
 
 TODO: allow the server to be killed while users are logged on: gracefully shut down
 TODO: allow users to ungracefully disconnect without throwing errors
+TODO: games aren't always listed in the correct order
 
 TODO: require user:pass login
     TODO: make connection use TLS

@@ -7,7 +7,6 @@ A server for hosting python games that AI can compete over.
 
 TODO: allow the server to be killed while users are logged on: gracefully shut down
 TODO: allow users to ungracefully disconnect without throwing errors
-TODO: games aren't always listed in the correct order
 
 TODO: require user:pass login
     TODO: make connection use TLS
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     threads = []
     waitlist, gamelist = {}, {}
     greeting_string = "Welcome to the GameCenter! Please pick a queue.\n"
-    for identifier in GAMES:
+    for identifier in list(set(GAMES.keys())): # sort games by ID
         waitlist[identifier] = []
         game = GAMES[identifier]
         greeting_string += identifier + ". " + game["name"] + "\n"

@@ -97,6 +97,21 @@ def create_thread(thread_target, *args):
     threads.append(t)
 
 def main():
+    global running, threads, waitlist, gamelist, greeting_string, waitlist_lock
+
+    # initialize global variables
+    running = True
+    threads = []
+    waitlist, gamelist = {}, {}
+    greeting_string = "Welcome to the GameCenter! Please pick a queue.\n"
+    for identifier in list(set(GAMES.keys())): # sort games by ID
+        waitlist[identifier] = []
+        game = GAMES[identifier]
+        greeting_string += identifier + ". " + game["name"] + "\n"
+        gamelist[identifier] = games.__getattribute__(game["class"])
+    greeting_string += "\n0. Quit"
+    waitlist_lock = Lock()
+
     listener = create_listener(
         NETWORK['ADDRESS'],
         NETWORK['PORT'],
@@ -111,25 +126,12 @@ def main():
         print("Shutting down.")
         listener.close()
 
-
-if __name__ == "__main__":
-    # initialize global variables
-    running = True
-    threads = []
-    waitlist, gamelist = {}, {}
-    greeting_string = "Welcome to the GameCenter! Please pick a queue.\n"
-    for identifier in list(set(GAMES.keys())): # sort games by ID
-        waitlist[identifier] = []
-        game = GAMES[identifier]
-        greeting_string += identifier + ". " + game["name"] + "\n"
-        gamelist[identifier] = games.__getattribute__(game["class"])
-    greeting_string += "\n0. Quit"
-    waitlist_lock = Lock()
-
-    main()
-
     # Wait to exist until all workers have exited
     running = False
     print("Waiting for workers to exit...")
     for t in threads:
         t.join()
+
+
+if __name__ == "__main__":
+    main()

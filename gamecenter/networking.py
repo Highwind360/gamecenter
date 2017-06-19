@@ -7,7 +7,7 @@ A helper library for working with and creating network connections.
 
 from socket import socket, AF_INET, SOCK_STREAM
 
-from settings import *
+from .settings import *
 
 
 def create_listener(addr, port, listener_count):

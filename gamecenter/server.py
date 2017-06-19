@@ -25,9 +25,9 @@ from time import sleep
 from itertools import count
 from threading import Thread, Lock
 
-import games
-from settings import *
-from networking import *
+from . import games
+from .settings import *
+from .networking import *
 
 
 def play_game(game, *players):
@@ -131,7 +131,3 @@ def main():
     print("Waiting for workers to exit...")
     for t in threads:
         t.join()
-
-
-if __name__ == "__main__":
-    main()

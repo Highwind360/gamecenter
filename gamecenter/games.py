@@ -14,8 +14,8 @@
 
 from threading import Barrier
 
-from networking import *
-from structures import DisjointSet
+from .networking import *
+from .structures import DisjointSet
 # TODO: you may be able to refactor most networking into the player class
 
 

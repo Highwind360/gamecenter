@@ -25,9 +25,9 @@ from time import sleep
 from itertools import count
 from threading import Thread, Lock
 
-import games
-from settings import *
-from networking import *
+from . import games
+from .settings import *
+from .networking import *
 
 
 def play_game(game, *players):
@@ -97,22 +97,8 @@ def create_thread(thread_target, *args):
     threads.append(t)
 
 def main():
-    listener = create_listener(
-        NETWORK['ADDRESS'],
-        NETWORK['PORT'],
-        NETWORK['LISTENER_COUNT']
-    )
-    create_thread(pair_off_queued_users)
-    try:
-        while True:
-            (socket, addr) = listener.accept()
-            create_thread(handle_user_connection, socket)
-    except KeyboardInterrupt:
-        print("Shutting down.")
-        listener.close()
+    global running, threads, waitlist, gamelist, greeting_string, waitlist_lock
 
-
-if __name__ == "__main__":
     # initialize global variables
     running = True
     threads = []
@@ -126,7 +112,19 @@ if __name__ == "__main__":
     greeting_string += "\n0. Quit"
     waitlist_lock = Lock()
 
-    main()
+    listener = create_listener(
+        NETWORK['ADDRESS'],
+        NETWORK['PORT'],
+        NETWORK['LISTENER_COUNT']
+    )
+    create_thread(pair_off_queued_users)
+    try:
+        while True:
+            (socket, addr) = listener.accept()
+            create_thread(handle_user_connection, socket)
+    except KeyboardInterrupt:
+        print("Shutting down.")
+        listener.close()
 
     # Wait to exist until all workers have exited
     running = False

@@ -25,7 +25,7 @@ class Player():
         self._s = connection
         self._b = Barrier(2)
 
-    def wait(self):
+    def toggle_wait(self):
         """The thread that calls this will be blocked until it is called again."""
         self._b.wait()
 

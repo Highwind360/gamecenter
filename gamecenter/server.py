@@ -5,8 +5,8 @@ Grayson Sinclair
 
 A server for hosting python games that AI can compete over.
 
-TODO: allow the server to be killed while users are logged on: gracefully shut down
-TODO: allow users to ungracefully disconnect without throwing errors
+TODO: when a user abruptly disconnects from a game, tell the other users
+    why they were kicked from the game.
 
 TODO: require user:pass login
     TODO: make connection use TLS
@@ -18,7 +18,7 @@ TODO: Add some games
     TODO: three-dimensional tic-tac-toe
     TODO: add support for games that require more than two players
         TODO: add queue support for making a single player control multiple
-                'players' in a game where the queue isn't full enough
+            players' in a game where the queue isn't full enough
 """
 
 from time import sleep
@@ -32,52 +32,63 @@ from .networking import *
 
 def play_game(game, *players):
     playing = not game.over()
-    while playing:
+    try:
+        while playing:
+            state = game.gamestate()
+            for player in players:
+                player.send(state)
+            players[1].send("Waiting for other player to move...")
+            response = players[0].interact(game.prompt)
+            while response in ["help", "quit"]:
+                if response == "help":
+                    players[0].send(game.help())
+                else:
+                    players[0].send("Abandoning match.")
+                    players[1].send("The other player has quit.")
+                    playing = False
+                response = players[0].interact(game.prompt)
+            while playing and not game.try_move(response):
+                players[0].send(game.gamestate())
+                players[0].send(game.error_message())
+                response = players[0].interact(game.prompt)
+            players = players[::-1]
+            playing = playing and not game.over()
         state = game.gamestate()
         for player in players:
             player.send(state)
-        players[1].send("Waiting for other player to move...")
-        response = players[0].interact(game.prompt)
-        while response in ["help", "quit"]:
-            if response == "help":
-                players[0].send(game.help())
-            else:
-                players[0].send("Abandoning match.")
-                players[1].send("The other player has quit.")
-                playing = False
-            response = players[0].interact(game.prompt)
-        while playing and not game.try_move(response):
-            players[0].send(game.gamestate())
-            players[0].send(game.error_message())
-            response = players[0].interact(game.prompt)
-        players = players[::-1]
-        playing = playing and not game.over()
-    state = game.gamestate()
+            player.send("Game Over")
+            # tell the connection handler we're done with this socket
+    except BrokenPipeError:
+        print("A player unexpectedly disconnected from a game.")
+        # TODO: how do you determine which players to message about the disconnect?
+    # free all players to resume choosing a game to play
     for player in players:
-        player.send(state)
-        player.send("Game Over")
-        player.wait() # tell the connection handler we're done with this socket
+        player.toggle_wait()
 
 def handle_user_connection(conn):
     is_connected = True
     print("A user has connected.")
     while is_connected:
-        send(conn, greeting_string)
-        response = recv(conn)
-        if response == "0":
+        try:
+            send(conn, greeting_string)
+            response = recv(conn)
+            if response == "0":
+                is_connected = False
+                send(conn, "Goodbye.")
+                conn.close()
+                print("A user has disconnected.")
+            elif response in GAMES.keys():
+                print("Player queued up for " + GAMES[response]["name"] + "!")
+                send(conn, "Searching for game...")
+                player = games.Player(conn)
+                with waitlist_lock:
+                    waitlist[response].append(player)
+                player.toggle_wait()
+            else:
+                send(conn, "I did not understand your choice. Please try again.")
+        except BrokenPipeError:
+            print("Connection to a user has been lost.")
             is_connected = False
-            send(conn, "Goodbye.")
-            conn.close()
-            print("A user has disconnected.")
-        elif response in GAMES.keys():
-            print("Player queued up for " + GAMES[response]["name"] + "!")
-            send(conn, "Searching for game...")
-            player = games.Player(conn)
-            with waitlist_lock:
-                waitlist[response].append(player)
-            player.wait()
-        else:
-            send(conn, "I did not understand your choice. Please try again.")
 
 def pair_off_queued_users():
     while running:
@@ -90,6 +101,10 @@ def pair_off_queued_users():
                     user1, user2 = wl.pop(0), wl.pop(0)
                     create_thread(play_game, new_game, user1, user2)
         sleep(1)
+    # clean out occupied queues
+    for wl in waitlist.values():
+        for player in wl:
+            player.toggle_wait()
 
 def create_thread(thread_target, *args):
     t = Thread(target=thread_target, args=(args))

@@ -70,7 +70,7 @@ class ChatRoom(GameBase):
         return self.history
 
     def try_move(self, move):
-        if move == "quit":
+        if move == "disconnect":
             self.connected = False
         elif move == "invalid":
             return False

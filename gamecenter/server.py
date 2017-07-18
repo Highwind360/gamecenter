@@ -24,6 +24,7 @@ TODO: Add some games
 from time import sleep
 from itertools import count
 from threading import Thread, Lock
+from traceback import format_exc
 
 from . import games
 from .settings import *
@@ -56,11 +57,11 @@ def play_game(game, *players):
                     response = players[0].interact(game.prompt)
             except BrokenPipeError:
                 raise BrokenPipeError
-            except Exception:
+            except Exception as err:
                 error_message = "There was an error making a move. Exiting the game, now."
                 for player in players:
                     player.send("\n" + error_message + "\n")
-                print(error_message)
+                print(error_message, format_exc())
                 playing = False
             players = players[::-1]
             playing = playing and not game.over()

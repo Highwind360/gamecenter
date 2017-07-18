@@ -18,7 +18,7 @@ GAMES = {
 # connection.
 NETWORK = {
     'ADDRESS': 'localhost', 
-    'PORT': 3001,
+    'PORT': 1337,
     'LISTENER_COUNT': 5
 }
 

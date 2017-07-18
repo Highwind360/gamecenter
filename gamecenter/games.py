@@ -162,8 +162,8 @@ class TicTacToe(GameBase):
     def gamestate(self):
         width = self.edgelen * 2 + 1
         board = self.boundary * width + "\n"
-        for i in range(3):
-            row = self.state[i*3:(i+1)*3]
+        for i in range(self.edgelen):
+            row = self.state[i*self.edgelen:(i+1)*self.edgelen]
             board += self.boundary + self.boundary.join(row) + self.boundary
             board += "\n" + self.boundary * width + "\n"
         return board

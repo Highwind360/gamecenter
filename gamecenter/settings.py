@@ -6,11 +6,23 @@
 GAMES = {
     "1": {
         "name": "Chat Room",
-        "class": "ChatRoom"
+        "class": "ChatRoom",
+        "arguments": []
     },
     "2": {
-        "name": "Tic Tac Toe (Naughts and Crosses)",
-        "class": "TicTacToe"
+        "name": "Tic Tac Toe (3x3)",
+        "class": "TicTacToe",
+        "arguments": []
+    },
+    "3": {
+        "name": "Tic Tac Toe (5x5)",
+        "class": "TicTacToe",
+        "arguments": [5]
+    },
+    "4": {
+        "name": "Tic Tac Toe (10x10)",
+        "class": "TicTacToe",
+        "arguments": [10]
     }
 }
 

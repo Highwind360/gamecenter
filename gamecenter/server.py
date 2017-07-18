@@ -109,7 +109,9 @@ def pair_off_queued_users():
                 wl = waitlist[identifier]
                 if len(wl) > 1:
                     # fetches the game class named in the "class" game settings
-                    new_game = games.__getattribute__(GAMES[identifier]["class"])()
+                    game_class = GAMES[identifier]["class"]
+                    game_args = GAMES[identifier]["arguments"]
+                    new_game = games.__getattribute__(game_class)(*game_args)
                     user1, user2 = wl.pop(0), wl.pop(0)
                     create_thread(play_game, new_game, user1, user2)
         sleep(1)

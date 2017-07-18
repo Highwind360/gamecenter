@@ -39,14 +39,16 @@ def play_game(game, *players):
                 player.send(state)
             players[1].send("Waiting for other player to move...")
             response = players[0].interact(game.prompt)
-            while response in ["help", "quit"]:
-                if response == "help":
-                    players[0].send(game.help())
-                else:
-                    players[0].send("Abandoning match.")
-                    players[1].send("The other player has quit.")
-                    playing = False
+            # process all commands that do not end a user's turn
+            while response in ["help"]:
+                players[0].send(game.help())
                 response = players[0].interact(game.prompt)
+            # allow a user to exit the game early, if necessary
+            if response == "quit":
+                players[0].send("Abandoning match.")
+                players[1].send("The other player has quit.")
+                playing = False
+            # if the engine cannot interpret the input, it leaves it to the game
             while playing and not game.try_move(response):
                 players[0].send(game.gamestate())
                 players[0].send(game.error_message())

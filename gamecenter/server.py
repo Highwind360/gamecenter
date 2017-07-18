@@ -49,10 +49,19 @@ def play_game(game, *players):
                 players[1].send("The other player has quit.")
                 playing = False
             # if the engine cannot interpret the input, it leaves it to the game
-            while playing and not game.try_move(response):
-                players[0].send(game.gamestate())
-                players[0].send(game.error_message())
-                response = players[0].interact(game.prompt)
+            try:
+                while playing and not game.try_move(response):
+                    players[0].send(game.gamestate())
+                    players[0].send(game.error_message())
+                    response = players[0].interact(game.prompt)
+            except BrokenPipeError:
+                raise BrokenPipeError
+            except Exception:
+                error_message = "There was an error making a move. Exiting the game, now."
+                for player in players:
+                    player.send("\n" + error_message + "\n")
+                print(error_message)
+                playing = False
             players = players[::-1]
             playing = playing and not game.over()
         state = game.gamestate()

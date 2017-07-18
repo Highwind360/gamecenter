@@ -104,7 +104,7 @@ def main():
     threads = []
     waitlist, gamelist = {}, {}
     greeting_string = "Welcome to the GameCenter! Please pick a queue.\n"
-    for identifier in list(set(GAMES.keys())): # sort games by ID
+    for identifier in map(str, list(set(map(int, GAMES.keys())))): # sort games by ID
         waitlist[identifier] = []
         game = GAMES[identifier]
         greeting_string += identifier + ". " + game["name"] + "\n"

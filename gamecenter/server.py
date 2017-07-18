@@ -5,13 +5,13 @@ Grayson Sinclair
 
 A server for hosting python games that AI can compete over.
 
-TODO: when a user abruptly disconnects from a game, tell the other users
-    why they were kicked from the game.
-
 TODO: require user:pass login
     TODO: make connection use TLS
     TODO: track user's scores at the various games
     TODO: add a scoreboard
+
+TODO: when a user abruptly disconnects from a game, tell the other users
+    why they were kicked from the game.
 
 TODO: Add some games
     TODO: tic-tac-toe of any edge length

@@ -130,7 +130,8 @@ class TicTacToe(GameBase):
     def find_connections(self, move, cur_p):
         """Looks for moves on the board that are connected."""
         # coordinates of move
-        x, y = move % 3, move // 3
+        el = self.edgelen
+        x, y = move % el, move // el
 
         vertical = self.vertical[x]
         horizontal = self.horizontal[y]
@@ -139,24 +140,27 @@ class TicTacToe(GameBase):
         #       of disjoint sets? Could be useful for games where the win
         #       condition is "x in a row".
         # Check if we have an adjacent piece, and register them as a group
-        if move - 3 in self.possible_moves and self.state[move - 3] == cur_p:
+        if y - 1 > 0 and self.state[y - 1] == cur_p:
             vertical.union_find(y, y - 1)
-        if move + 3 in self.possible_moves and self.state[move + 3] == cur_p:
+        if y + 1 < self.edgelen and self.state[y + 1] == cur_p:
             vertical.union_find(y, y + 1)
         if x - 1 > 0 and self.state[move - 1] == cur_p:
             horizontal.union_find(x, x - 1)
         if x + 1 < self.edgelen and self.state[move + 1] == cur_p:
             horizontal.union_find(x, x + 1)
 
+        n = self.edgelen + 1 # downwards offset
         if x == y: # diagonal downards
-            if move - 4 in self.possible_moves and self.state[move - 4] == cur_p:
+            if move - n > 0 and self.state[move - n] == cur_p:
                 self.diagonal["downwards"].union_find(y, y - 1)
-            if move + 4 in self.possible_moves and self.state[move + 4] == cur_p:
+            if move + n < self.edgelen and self.state[move + n] == cur_p:
                 self.diagonal["downwards"].union_find(y, y + 1)
+
+        n = self.edgelen - 1 # upwards offset
         if x == self.edgelen - (y + 1): # self.diagonal upwards
-            if move - 2 in self.possible_moves and self.state[move - 2] == cur_p:
+            if move - n > 0 and self.state[move - n] == cur_p:
                 self.diagonal["upwards"].union_find(y, y - 1)
-            if move + 2 in self.possible_moves and self.state[move + 2] == cur_p:
+            if move + n < self.edgelen and self.state[move + n] == cur_p:
                 self.diagonal["upwards"].union_find(y, y + 1)
 
     def gamestate(self):

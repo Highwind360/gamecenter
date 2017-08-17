@@ -152,11 +152,11 @@ def main():
             (socket, addr) = listener.accept()
             create_thread(handle_user_connection, socket)
     except KeyboardInterrupt:
-        print("Shutting down.")
+        print("Shutting down!")
         listener.close()
 
-    # Wait to exist until all workers have exited
-    running = False
-    print("Waiting for workers to exit...")
-    for t in threads:
-        t.join()
+        # Wait to exit until all workers have exited
+        running = False
+        print("Waiting for workers to exit...")
+        for t in threads:
+            t.join()
